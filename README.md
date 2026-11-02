@@ -1,4 +1,4 @@
-# Make Your Laptop TV Remote
+# ChatGPT_is_TV_Remote
 
 Docker MCP service with 78 remote buttons, app shortcuts, text entry, TV status and screenshots. ChatGPT connects through an MCP client/tunnel; no OpenAI API key is required by this service. The model runs in the cloud.
 
