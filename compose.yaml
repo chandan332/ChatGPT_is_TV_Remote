@@ -1,0 +1,12 @@
+services:
+  tv-adapter:
+    build: .
+    image: tv-adapter:local
+    pull_policy: never
+    stdin_open: true
+    environment:
+      TV_ENDPOINT: ${TV_ENDPOINT:-192.168.68.51:5555}
+    volumes:
+      - adb-keys:/home/adapter/.android
+volumes:
+  adb-keys:
