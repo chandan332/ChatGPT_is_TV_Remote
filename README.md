@@ -55,4 +55,31 @@ Rapid volume: call hold_volume(direction='up' or 'down', seconds=2). Duration ac
 
 Start the configured tunnel: `./start-tunnel.ps1` in PowerShell. It prompts securely for the runtime API key if absent. Keep the window running.
 
+## Faster ChatGPT commands
+
+ChatGPT can now use `run_actions` to execute a known sequence in one MCP call. For example, "move down five times and select" becomes:
+
+```json
+{
+  "actions": [
+    {"action": "key", "key": "down", "repeat": 5},
+    {"action": "key", "key": "ok"}
+  ]
+}
+```
+
+Steps support `key` (including repeat/long_press), `text`, `open_app`, and `wait` (seconds). Use text only with a known focused text field. Add a short explicit wait when a known screen transition needs time. Unfamiliar screens still require inspection before choosing the next action; this is not a universal app-search macro.
+
+All steps validate before any command runs. Limits are 20 steps, 120 key presses, 10 seconds of explicit waits and a 30-second execution budget. Sequences run in order without other remote requests interleaving. On failure, the result contains `ok: false`, `completed_steps`, and a one-based `failed_step`. A failed/timed-out step may already have affected the TV: inspect the current state before retrying. Commands are never automatically replayed.
+
+The MCP server instructions encourage batching and short acknowledgments, avoiding repeated connection/status/screenshots unless needed. `get_tv_status()` now returns a compact foreground summary; use `detail=true` for the previous detailed dump. Keep the tunnel running: its stdio container and ADB server persist for the connection, rather than restarting for every button. A transport change alone does not eliminate ChatGPT processing time.
+
+## Measuring delay
+
+- `get_latency_stats(limit=5)` returns recent tool duration, queue time, ADB call count and ADB duration without contacting the TV.
+- `measure_tv_latency(samples=3)` measures harmless ADB echo round trips without pressing buttons.
+- `python tests/benchmark_latency.py` measures a fresh Docker/MCP startup, then a probe's local MCP round-trip time and server/ADB timings. Build the image first. This opens a disposable session and connects once using the existing ADB identity.
+
+The last 100 tool timing records are kept in memory and reset when the server restarts. Timing records also go to stderr as JSON (`event: tv_tool_timing`), never MCP stdout; they contain no command arguments or typed text. Set `TV_TIMING_LOG=0` in the server environment to disable those log records. The reported receive timestamp is when the server's tool wrapper starts, after MCP parsing/validation. These measurements exclude ChatGPT processing and cloud/tunnel transit; they do not measure the full time from speaking a command to the TV visibly reacting.
+
 Development checks (create a disposable Python environment first): install `requirements.txt` and `pytest`, then run `python -m pytest tests` and `python tests/mcp_smoke.py`. Local Python environments and caches are generated and are not part of the project.

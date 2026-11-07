@@ -9,6 +9,17 @@ async def main():
         async with ClientSession(reader, writer) as session:
             await session.initialize()
             tools = await session.list_tools()
+            assert {'run_actions', 'get_latency_stats', 'measure_tv_latency'} <= {tool.name for tool in tools.tools}
+            batch = await session.call_tool('run_actions', {'actions': [{'action': 'wait', 'seconds': 0}]})
+            assert not batch.isError
+            assert batch.structuredContent['ok']
+            rejected_batch = await session.call_tool('run_actions', {'actions': [
+                {'action': 'key', 'key': 'home'}, {'action': 'text', 'text': '\u2603'},
+            ]})
+            assert rejected_batch.isError
+            timing = await session.call_tool('get_latency_stats', {})
+            assert not timing.isError
+            assert 'run_actions' in str(timing)
             assert 'hold_volume' in {tool.name for tool in tools.tools}
             assert {'list_remote_controls', 'set_power', 'select_input', 'enter_channel', 'type_text'} <= {tool.name for tool in tools.tools}
             remote = next(tool for tool in tools.tools if tool.name == 'press_key')

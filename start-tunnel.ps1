@@ -9,7 +9,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 Write-Host 'Docker is running.'
 
-$client = 'D:\android_app\tunnel-client\tunnel-client.exe'
+$client = 'D:\Tv_adapter\tunnel-client\tunnel-client.exe'
 $composeFile = Join-Path $PSScriptRoot 'compose.yaml'
 & docker compose -f $composeFile build
 if ($LASTEXITCODE -ne 0) { throw 'TV adapter image build failed; tunnel was not started.' }
@@ -18,7 +18,8 @@ if (-not $env:CONTROL_PLANE_API_KEY) {
     $env:CONTROL_PLANE_API_KEY = [System.Net.NetworkCredential]::new('', $secret).Password
     Remove-Variable secret
 }
-$env:HEALTH_LISTEN_ADDR = '127.0.0.1:8080'
+# Let Windows allocate an available local port to avoid listener conflicts.
+$env:HEALTH_LISTEN_ADDR = '127.0.0.1:0'
 & $client doctor --profile tv-adapter --explain
 if ($LASTEXITCODE -ne 0) { throw 'Tunnel checks failed. Fix the reported check before running.' }
 & $client run --profile tv-adapter
